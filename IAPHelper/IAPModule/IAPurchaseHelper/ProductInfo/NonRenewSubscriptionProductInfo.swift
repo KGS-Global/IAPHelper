@@ -1,0 +1,4 @@
+
+class NonRenewSubscriptionProductInfo: SubscriptionProductInfo {
+    
+}
