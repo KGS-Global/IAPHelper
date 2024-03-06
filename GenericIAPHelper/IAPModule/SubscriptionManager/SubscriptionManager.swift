@@ -326,6 +326,10 @@ extension SubscriptionManager {
         
         return IAPurchaseHelper.shared.isSubscriptionTrialPeriodOngoing()
     }
+    
+    @objc public func hasPurchasesHistory() -> Bool {
+        return IAPurchaseHelper.shared.hasPurchasesHistory()
+    }
 }
 
 //MARK: Free Trial Period
@@ -417,3 +421,4 @@ extension SubscriptionManager {
         ProgressHUD.dismiss()
     }
 }
+
