@@ -135,5 +135,7 @@ extension IAPurchaseHelper {
     @objc public func isSubscriptionTrialPeriodOngoing() -> Bool {
         return currentSubscription?.getTrialPeriodState() ?? false
     }
-    
+    @objc public func hasPurchasesHistory() -> Bool {
+        return currentSubscription == nil ? false : true
+    }
 }
