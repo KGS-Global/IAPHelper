@@ -192,6 +192,31 @@ extension SubscriptionManager {
          return skProduct.productPrice
      }
     
+    @objc public func requestIntroductoryPrice(for productID: String) -> String? {
+        
+        guard let skProduct = dictionaryProductsForID[productID] else {
+            return nil
+        }
+        var priceFormatter = IACommonUtils.currencyFormatter
+        
+        guard let price = skProduct.skProduct.introductoryPrice?.price else{
+            return nil
+        }
+        if priceFormatter.locale != skProduct.skProduct.priceLocale {
+            priceFormatter.locale = skProduct.skProduct.priceLocale
+        }
+        let currencyFormattedPrice = priceFormatter.string(from: price) ?? "\(price)"
+
+        return currencyFormattedPrice
+    }
+    
+    @objc public func requestIntroductoryPriceInDecimal(for productID: String) -> NSDecimalNumber? {
+         
+         guard let skProduct = dictionaryProductsForID[productID] else {
+             return nil
+         }
+        return skProduct.skProduct.introductoryPrice?.price
+     }
 }
 
 //MARK: Request Purchase Actions
@@ -289,6 +314,18 @@ extension SubscriptionManager {
         
     }
     
+    @objc public func currentlyPurchasedProductIDs()-> [String]{
+        var productIDs : [String] = []
+        let arrayProductIDsForChecking = self.productLoader.getAllProductIds()
+        
+        for aProductIdForCheck in arrayProductIDsForChecking {
+            if IAPurchaseHelper.shared.isPurchased(productID: aProductIdForCheck){
+                productIDs.append(aProductIdForCheck)
+            }
+        }
+        return productIDs
+    }
+    
     @objc public func isIndividuallyPurchased(for productID: String) -> Bool {
         
         return IAPurchaseHelper.shared.isPurchased(productID: productID)
@@ -326,8 +363,9 @@ extension SubscriptionManager {
         
         return IAPurchaseHelper.shared.isSubscriptionTrialPeriodOngoing()
     }
-    
+  
     @objc public func hasPurchasesHistory() -> Bool {
+        
         return IAPurchaseHelper.shared.hasPurchasesHistory()
     }
 }
@@ -421,4 +459,102 @@ extension SubscriptionManager {
         ProgressHUD.dismiss()
     }
 }
+
+
+extension SubscriptionManager{
+    @objc public func getRegularProductPeriod(for productID: String) -> String?{
+        
+        guard let _skProduct = dictionaryProductsForID[productID] else {
+            return nil
+        }
+        let skProduct = _skProduct.skProduct
+        
+        let val = skProduct.subscriptionPeriod?.numberOfUnits
+        return String(describing: val)
+    }
+
+    
+    @objc public func getRegularProductDateType(for productID: String) -> String?{
+        
+        guard let _skProduct = dictionaryProductsForID[productID] else {
+            return nil
+        }
+        let skProduct = _skProduct.skProduct
+        let periodUnit =  skProduct.subscriptionPeriod?.unit
+       
+        switch periodUnit {
+            
+        case .day:
+            return "day"
+        case .week:
+            return "week"
+        case .month:
+           return "month"
+        case .year:
+           return "year"
+        default:
+            break
+        }
+        return nil
+    }
+ 
+    @objc public func introductoryProductDuration(for productID: String)-> String?{
+        
+        guard let _skProduct = dictionaryProductsForID[productID] else {
+            return nil
+        }
+        
+        let skProduct = _skProduct.skProduct.introductoryPrice
+        guard let skProduct else {
+            return nil
+        }
+        let periodUnit = skProduct.subscriptionPeriod.unit
+        let timeForPeriodUnit = skProduct.subscriptionPeriod.numberOfUnits
+        
+        var dateFormate: String = ""
+        switch periodUnit {
+            
+        case .day:
+            dateFormate = String(timeForPeriodUnit) + " day"
+        case .week:
+            dateFormate = String(timeForPeriodUnit) + " week"
+        case .month:
+            dateFormate = String(timeForPeriodUnit) + " month"
+        case .year:
+            dateFormate = String(timeForPeriodUnit) + " year"
+        default:
+            break
+        }
+        if timeForPeriodUnit >= 2 {
+            dateFormate += "s"
+        }
+        return dateFormate
+    }
+    @objc public func numberOfPeriodsRepetition(for productID: String)-> String?{
+        guard let skProduct = dictionaryProductsForID[productID] else {
+            return nil
+        }
+        let periods = skProduct.skProduct.introductoryPrice?.numberOfPeriods
+        return String(describing: periods)
+    }
+    @objc public func paymentMode(for productID: String)-> NSDecimalNumber?{
+        guard let skProduct = dictionaryProductsForID[productID] else {
+            return nil
+        }
+        let mode = skProduct.skProduct.introductoryPrice?.paymentMode
+        switch mode{
+        case .freeTrial:
+            return 0
+        case .payAsYouGo:
+            return 1
+        case .payUpFront:
+            return 2
+        default:
+            break
+        }
+        return nil
+    }
+
+}
+
 
