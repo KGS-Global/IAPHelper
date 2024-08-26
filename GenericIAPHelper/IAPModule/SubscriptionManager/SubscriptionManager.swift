@@ -314,7 +314,7 @@ extension SubscriptionManager {
         
     }
     
-    @objc public func currentlyPurchasedProductIDs()-> [String]{
+    @objc public func currentlyPurchasedProductID()-> String?{
         var productIDs : [String] = []
         let arrayProductIDsForChecking = self.productLoader.getAllProductIds()
         
@@ -323,7 +323,10 @@ extension SubscriptionManager {
                 productIDs.append(aProductIdForCheck)
             }
         }
-        return productIDs
+        if productIDs.isEmpty{
+            return nil
+        }
+        return productIDs[0]
     }
     
     @objc public func isIndividuallyPurchased(for productID: String) -> Bool {
@@ -368,6 +371,36 @@ extension SubscriptionManager {
         
         return IAPurchaseHelper.shared.hasPurchasesHistory()
     }
+    @objc public func currentSubscribedProductID() -> String? {
+        if IAPurchaseHelper.shared.getCurrentSubscriptionStatus() == false{
+            return self.currentlyPurchasedProductID()
+        }
+        return  IAPurchaseHelper.shared.getCurrentSubscriptionProductID()
+    }
+    
+    @objc public func hasIndividualProductPurchaseHistory(productId : String) -> Bool{
+        return IAPurchaseHelper.shared.hasIndividualProductPurchaseHistory(productId: productId)
+    }
+    
+    @objc public func getExpirationDateString() -> String?{
+        if IAPurchaseHelper.shared.getCurrentSubscriptionStatus() == false{
+            return nil
+        }
+        return IAPurchaseHelper.shared.getExpirationDateString()
+    }
+    @objc public func getPurchaseDateString() -> String?{
+        if IAPurchaseHelper.shared.getCurrentSubscriptionStatus() == false{
+            return nil
+        }
+        return IAPurchaseHelper.shared.getPurchaseDateString()
+    }
+    @objc public func isAutoRenewalOn() -> Bool{
+        if IAPurchaseHelper.shared.getCurrentSubscriptionStatus() == false{
+            return false
+        }
+        return IAPurchaseHelper.shared.isAutoRenewalOn()
+
+    }
 }
 
 //MARK: Free Trial Period
@@ -399,6 +432,50 @@ extension SubscriptionManager {
         }
         
         return freeTrialPeriod
+    }
+    
+    public func getFreeTrialPeriodInDaysInteger(for productID: String?) -> Int {
+        
+        guard productID != nil else {
+            return 0
+        }
+        
+        guard let inAppProduct = IAPurchaseHelper.shared.getInAppProduct(for: productID!) else {
+            return 0
+        }
+        
+        let storeKitProduct = inAppProduct.skProduct
+        
+        guard let introductoryPrice = storeKitProduct.introductoryPrice else {return 0}
+        
+        var freeTrialPeriod: Int
+        let numberOfUnits = introductoryPrice.subscriptionPeriod.numberOfUnits
+        let periodUnit = introductoryPrice.subscriptionPeriod.unit
+        
+        freeTrialPeriod = convertTrialPeriodInDaysInteger(for: numberOfUnits, periodUnit: periodUnit)
+        
+        return freeTrialPeriod
+    }
+    
+    
+    private func convertTrialPeriodInDaysInteger(for numberOfUnit: Int, periodUnit: SKProduct.PeriodUnit) -> Int {
+        
+        var numberOfDays: Int = 0;
+        
+        switch periodUnit {
+            
+        case .day:
+            numberOfDays = numberOfUnit
+        case .week:
+            numberOfDays = numberOfUnit * 7
+        case .month:
+            numberOfDays = numberOfUnit * 30
+        case .year:
+            numberOfDays = numberOfUnit * 365
+        default:
+            break
+        }
+        return numberOfDays
     }
     
     private func convertTrialPeriodInDays(for numberOfUnit: Int, periodUnit: SKProduct.PeriodUnit) -> String {
@@ -472,7 +549,7 @@ extension SubscriptionManager{
         let val = skProduct.subscriptionPeriod?.numberOfUnits
         return String(describing: val)
     }
-
+    
     
     @objc public func getRegularProductDateType(for productID: String) -> String?{
         
@@ -481,7 +558,7 @@ extension SubscriptionManager{
         }
         let skProduct = _skProduct.skProduct
         let periodUnit =  skProduct.subscriptionPeriod?.unit
-       
+        
         switch periodUnit {
             
         case .day:
@@ -489,15 +566,15 @@ extension SubscriptionManager{
         case .week:
             return "week"
         case .month:
-           return "month"
+            return "month"
         case .year:
-           return "year"
+            return "year"
         default:
             break
         }
         return nil
     }
- 
+    
     @objc public func introductoryProductDuration(for productID: String)-> String?{
         
         guard let _skProduct = dictionaryProductsForID[productID] else {
@@ -554,7 +631,5 @@ extension SubscriptionManager{
         }
         return nil
     }
-
 }
-
 

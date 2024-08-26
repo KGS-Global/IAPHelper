@@ -142,9 +142,22 @@ extension UIApplication {
 
 extension UIDevice{
     var hasNotch: Bool {
-        if #available(iOS 11.0, tvOS 11.0, *) {
-            return UIApplication.shared.delegate?.window??.safeAreaInsets.top ?? 0 > 20
+        guard #available(iOS 11.0, *), let window = UIApplication.shared.windows.filter({$0.isKeyWindow}).first else { return false }
+        //if UIDevice.current.orientation.isPortrait {  //Device Orientation != Interface Orientation
+        if let o = windowInterfaceOrientation?.isPortrait, o == true {
+            return window.safeAreaInsets.top >= 44
+        } else {
+            return window.safeAreaInsets.left > 0 || window.safeAreaInsets.right > 0
         }
-        return false
+    }
+    private var windowInterfaceOrientation: UIInterfaceOrientation? {
+        if #available(iOS 13.0, *) {
+            return UIApplication.shared.windows.first?.windowScene?.interfaceOrientation
+        } else {
+            return UIApplication.shared.statusBarOrientation
+        }
+    }
+    func isPad() -> Bool {
+        return UIDevice.current.userInterfaceIdiom == UIUserInterfaceIdiom.pad
     }
 }
