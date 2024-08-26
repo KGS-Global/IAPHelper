@@ -128,14 +128,37 @@ extension IAPurchaseHelper {
     @objc public func getCurrentSubscriptionStatus() -> Bool {
         return currentSubscription?.getSubscriptionStatus() ?? false
     }
-    
+    @objc public func hasPurchasesHistory() -> Bool {
+        return currentSubscription == nil ? false : true
+    }
     @objc public func getCurrentSubscriptionProductID() -> String? {
         return currentSubscription?.productIdentifier
     }
     @objc public func isSubscriptionTrialPeriodOngoing() -> Bool {
         return currentSubscription?.getTrialPeriodState() ?? false
     }
-    @objc public func hasPurchasesHistory() -> Bool {
-        return currentSubscription == nil ? false : true
+    @objc public func getExpirationDateString() -> String?{
+        return currentSubscription?.expirationDateString
+    }
+    @objc public func getPurchaseDateString() -> String?{
+        
+        return currentSubscription?.purchaseDateString
+    }
+    @objc public func isAutoRenewalOn() -> Bool {
+        return currentSubscription?.autoRenewalStatus ?? false
+    }
+    
+    @objc public func hasIndividualProductPurchaseHistory(productId : String) -> Bool{
+
+        let productSet = savedInAppSession?.productIDSet
+        if productSet == nil{
+            return false
+        }
+        for id in productSet!{
+            if id == productId{
+                return true
+            }
+        }
+        return false
     }
 }

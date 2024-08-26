@@ -30,12 +30,13 @@ public enum IAReceiptStatus: Int{
     
     @objc var receiptData: Data?
     var parsedReceipt: [String: Any]?
-    
+    private var autoRenewalStatus: Bool = false
     private var sessionID: String?
     private var allPaidSubscriptions: [SubscriptionProductInfo]?
     private var allPaidSubscriptionsByGroup: [String:[SubscriptionProductInfo]]?
     private var allPaidNonConsumables: [NonConsumableProductInfo]?
-    
+    public var productIDSet = Set<String>()
+
     var currentSubscription: SubscriptionProductInfo? {
         let sortedByMostRecentPurchase = allPaidSubscriptions?.sorted { $0.purchasedDate > $1.purchasedDate }
         return sortedByMostRecentPurchase?.first
@@ -93,6 +94,7 @@ public enum IAReceiptStatus: Int{
                 if (purchase["expires_date"] == nil){
                     if let nonConsumable = NonConsumableProductInfo(json: purchase){
                         allPaidNonConsumables?.append(nonConsumable)
+                        productIDSet.insert(nonConsumable.productIdentifier)
                     }
                 }
             }
@@ -101,12 +103,23 @@ public enum IAReceiptStatus: Int{
         if let latestPurchases = parsedReceipt!["latest_receipt_info"] as? Array<[String: Any]>{
             IAPLog.event(.paidSubscriptionInReceiptExist)
             for purchase in latestPurchases {
-                
                 if (purchase["expires_date"] != nil){
                     if let paidSubscription = SubscriptionProductInfo(json: purchase) {
                         allPaidSubscriptions?.append(paidSubscription)
+                        productIDSet.insert(paidSubscription.productIdentifier)
                     }
                 }
+            }
+        }
+        
+        
+        if let renewal = parsedReceipt!["pending_renewal_info"] as? Array<[String: Any]>{
+            let  renew =  renewal[0]["auto_renew_status"]
+            if (renew as! String == "1"){
+                self.autoRenewalStatus = true
+            }
+            else{
+                self.autoRenewalStatus = false
             }
         }
     }
@@ -133,6 +146,9 @@ extension InAppSession {
     func getProductInfo(for iapID: String) -> NonConsumableProductInfo?{
         
         if let currentSubscription = currentSubscription, currentSubscription.productIdentifier == iapID {
+            if (currentSubscription.getSubscriptionStatus() == true){
+                currentSubscription.autoRenewalStatus = autoRenewalStatus
+           }
             return currentSubscription
         }
         

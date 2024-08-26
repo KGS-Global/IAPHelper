@@ -16,6 +16,4 @@ class IACommonUtils: NSObject {
         dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
         return dateFormatter
     }()
-    
-    
 }
